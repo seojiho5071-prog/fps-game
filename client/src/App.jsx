@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls";
 import { io } from "socket.io-client";
 
-// 🌐 ⭐️ (가장 중요) 서동필님의 진짜 Render 서버 주소 연결 완료!
+// 🌐 서동필님의 진짜 Render 서버 주소
 const SERVER_URL = "https://fps-game-f6x1.onrender.com"; 
 
 const socket = io(SERVER_URL);
@@ -11,41 +11,35 @@ const socket = io(SERVER_URL);
 function App() {
   const mountRef = useRef(null);
 
-  // 🕹️ 게임 상태 관리 (React State)
-  const [isPlaying, setIsPlaying] = useState(false); // 게임 플레이 중?
-  const [activeMenu, setActiveMenu] = useState(null); // 현재 켜진 메뉴 ('settings', 'mode', null)
+  // 🕹️ 게임 상태 관리
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [activeMenu, setActiveMenu] = useState(null);
   
-  // ⚙️ 설정 값 저장 (감도, 소리)
-  const [sensitivity, setSensitivity] = useState(0.5); // 마우스 감도 (0.1 ~ 1.0)
-  const [volume, setVolume] = useState(0.7); // 소리 크기 (0.0 ~ 1.0)
+  // ⚙️ 설정 값 저장
+  const [sensitivity, setSensitivity] = useState(0.5);
+  const [volume, setVolume] = useState(0.7);
   
   // 🎮 게임 모드 저장
-  const [gameMode, setGameMode] = useState("zombie"); // ('1v1', 'zombie', 'survival')
+  const [gameMode, setGameMode] = useState("zombie");
 
-  // THREE.js 객체 저장을 위한 Ref
+  // THREE.js 객체 저장
   const rendererRef = useRef(null);
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
   const controlsRef = useRef(null);
-  const clockRef = useRef(new THREE.Clock());
 
-  // 플레이어 및 멀티플레이어 상태
-  const playerRef = useRef({ x: 0, z: 0, hp: 100, score: 0 });
-  const [players, setPlayers] = useState({});
+  // 키보드 입력 저장
   const keys = useRef({});
 
-  // 🚀 키보드 입력 및 메뉴 토글 처리
   useEffect(() => {
     const handleKeyDown = (e) => {
       keys.current[e.key.toLowerCase()] = true;
 
-      // Esc 키로 포인터 락 풀렸을 때 처리
       if (e.key === "Escape") {
         setIsPlaying(false);
         setActiveMenu(null);
       }
 
-      // ⚙️ G키: 설정 메뉴 토글
       if (e.key.toLowerCase() === "g") {
         if (activeMenu === "settings") {
           setActiveMenu(null);
@@ -57,7 +51,6 @@ function App() {
         }
       }
 
-      // 🎮 M키: 모드 변경 메뉴 토글
       if (e.key.toLowerCase() === "m") {
         if (activeMenu === "mode") {
           setActiveMenu(null);
@@ -83,24 +76,20 @@ function App() {
     };
   }, [activeMenu]);
 
-  // 🎮 THREE.js 초기화 및 게임 루프
   useEffect(() => {
-    // 1. Scene & Camera
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xa0a0a0);
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.y = 2; // 눈높이
+    camera.position.y = 2;
     cameraRef.current = camera;
 
-    // 2. Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     mountRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 3. Lighting & Floor (맵)
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -113,27 +102,22 @@ function App() {
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
 
-    // 4. Controls (PointerLock)
     const controls = new PointerLockControls(camera, renderer.domElement);
     controlsRef.current = controls;
 
-    // 5.멀티플레이어 (다른 플레이어) 표현을 위한 그룹
     const otherPlayersGroup = new THREE.Group();
     scene.add(otherPlayersGroup);
 
-    // 🚀 게임 루프 (애니메이션)
     const animate = () => {
       requestAnimationFrame(animate);
 
       if (controls.isLocked === true) {
-        // 플레이어 이동 로직 (W, A, S, D)
         const moveSpeed = 0.1;
         if (keys.current['w']) controls.moveForward(moveSpeed);
         if (keys.current['s']) controls.moveForward(-moveSpeed);
         if (keys.current['a']) controls.moveRight(-moveSpeed);
         if (keys.current['d']) controls.moveRight(moveSpeed);
 
-        // 현재 내 위치를 서버로 전송
         socket.emit("move", {
           x: camera.position.x,
           z: camera.position.z,
@@ -144,9 +128,7 @@ function App() {
     };
     animate();
 
-    // 🌐 서버에서 다른 플레이어 정보 업데이트 수신
     socket.on("state", (serverPlayers) => {
-      // 내 정보 제외한 다른 플레이어만 렌더링
       otherPlayersGroup.clear();
       for (const id in serverPlayers) {
         if (id !== socket.id) {
@@ -160,7 +142,6 @@ function App() {
       }
     });
 
-    // 화면 리사이즈 처리
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -175,15 +156,12 @@ function App() {
     };
   }, []);
 
-  // ⚙️ 설정 값 변경 시 PointerLock 감도 조절
   useEffect(() => {
     if (controlsRef.current) {
-      // 기본값 1.0에 서동필님의 감도를 곱해서 조절
       controlsRef.current.pointerSpeed = 1.0 * sensitivity;
     }
   }, [sensitivity]);
 
-  // 게임 시작 버튼 클릭
   const startGame = () => {
     if (controlsRef.current) {
       controlsRef.current.lock();
@@ -194,10 +172,8 @@ function App() {
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      {/* 🎮 THREE.js 게임 화면 마운트 */}
       <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
 
-      {/* 🎯 에임 (Crosshair) - 게임 중일 때만 표시 */}
       {isPlaying && !activeMenu && (
         <div style={{
           position: "absolute", top: "50%", left: "50%",
@@ -207,7 +183,6 @@ function App() {
         }} />
       }
 
-      {/* 🚀 시작 화면 (Overlay) */}
       {!isPlaying && !activeMenu && (
         <div style={overlayStyle}>
           <h1 style={{ fontSize: "60px", color: "red", textShadow: "2px 2px 5px black" }}>ZOMBIE SURVIVAL FPS</h1>
@@ -219,7 +194,6 @@ function App() {
         </div>
       }
 
-      {/* ⚙️ G키: 설정 메뉴 (Settings Menu) */}
       {activeMenu === "settings" && (
         <div style={overlayStyle}>
           <h2 style={{ fontSize: "40px", color: "yellow" }}>⚙️ 설정 (SETTINGS)</h2>
@@ -247,7 +221,6 @@ function App() {
         </div>
       }
 
-      {/* 🎮 M키: 모드 변경 메뉴 (Mode Selection) */}
       {activeMenu === "mode" && (
         <div style={overlayStyle}>
           <h2 style={{ fontSize: "40px", color: "cyan" }}>🎮 모드 선택 (MODE)</h2>
@@ -273,7 +246,6 @@ function App() {
   );
 }
 
-// 🎨 화면 스타일 (CSS-in-JS)
 const overlayStyle = {
   position: "absolute", top: 0, left: 0,
   width: "100%", height: "100%",
