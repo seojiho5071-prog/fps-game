@@ -181,7 +181,7 @@ function App() {
           backgroundColor: "red", borderRadius: "50%",
           transform: "translate(-50%, -50%)", pointerEvents: "none", zIndex: 1
         }} />
-      }
+      )}
 
       {!isPlaying && !activeMenu && (
         <div style={overlayStyle}>
@@ -192,7 +192,7 @@ function App() {
           </p>
           <button onClick={startGame} style={buttonStyle}>게임 시작 (Click)</button>
         </div>
-      }
+      )}
 
       {activeMenu === "settings" && (
         <div style={overlayStyle}>
@@ -219,7 +219,7 @@ function App() {
           </div>
           <p style={{ color: "#aaa" }}>[G] 키를 다시 눌러 게임으로 돌아가기</p>
         </div>
-      }
+      )}
 
       {activeMenu === "mode" && (
         <div style={overlayStyle}>
@@ -241,7 +241,7 @@ function App() {
           }</span></h3>
           <p style={{ color: "#aaa" }}>[M] 키를 다시 눌러 게임으로 돌아가기</p>
         </div>
-      }
+      )}
     </div>
   );
 }
