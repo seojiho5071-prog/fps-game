@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls.js";
 import io from "socket.io-client";
 
-const SERVER_URL = window.location.hostname === "localhost" ? "http://localhost:3001" : `http://${window.location.hostname}:3001`;
+const SERVER_URL = "https://fps-game-f6x1.onrender.com";
 const socket = io(SERVER_URL);
 
 // 🔫 무기 데미지 너프 (생존을 위해 약 15~20% 감소)
